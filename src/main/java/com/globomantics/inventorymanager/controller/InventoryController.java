@@ -1,5 +1,6 @@
 package com.globomantics.inventorymanager.controller;
 
+import com.globomantics.inventorymanager.model.PurchaseRecord;
 import com.globomantics.inventorymanager.service.InventoryService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,6 +11,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 
 @RestController
@@ -22,10 +26,39 @@ public class InventoryController {
     public InventoryController(InventoryService inventoryService) {
         this.inventoryService = inventoryService;
     }
-
     @GetMapping("/inventory/{id}")
     public ResponseEntity<?> getInventoryRecord(@PathVariable Integer id) {
 
-        return inventoryService
+        return inventoryService.getInventoryRecord(id)
+                .map(inventoryRecord -> {
+                    try {
+                        return ResponseEntity
+                                .ok()
+                                .location(new URI("/inventory/" + inventoryRecord.getProductId()))
+                                .body(inventoryRecord);
+                    } catch (URISyntaxException e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                    }
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/inventory/purchase-record")
+    public ResponseEntity<?> addPurchaseRecord(@RequestBody PurchaseRecord purchaseRecord) {
+        logger.info("Creating new purchase record: {}", purchaseRecord);
+
+        return inventoryService.purchaseProduct(purchaseRecord.getProductId(), purchaseRecord.getQuantityPurchased())
+                .map(inventoryRecord -> {
+                    try {
+                        return ResponseEntity
+                                .ok()
+                                .location(new URI("/inventory/" + inventoryRecord.getProductId()))
+                                .body(inventoryRecord);
+                    } catch (URISyntaxException e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                    }
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }
