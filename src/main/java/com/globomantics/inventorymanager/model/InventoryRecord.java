@@ -7,7 +7,7 @@ public class InventoryRecord implements Serializable {
     private Integer quantity;
     private String productName;
 
-    public InventoryRecord() { }
+    public InventoryRecord(int i, int i1, String s, String great_products) { }
 
     public InventoryRecord(Integer productId, Integer quantity, String productName) {
         this.productId = productId;
